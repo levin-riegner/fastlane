@@ -36,7 +36,7 @@ platform :android do
       app: ENV["FIREBASE_APP_ID"],
       release_notes: last_git_commit[:message],
       apk_path: is_flutter ? get_flutter_apk_path(ENV["BUILD_FLAVOR"]): nil,
-      groups: build_variant.fetch(ENV["DISTRIBUTION_GROUPS"])
+      groups: ENV["DISTRIBUTION_GROUPS"]
     )
 
   end
