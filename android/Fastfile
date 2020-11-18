@@ -20,9 +20,6 @@ platform :android do
   # Usage Example: fastlane internal_release build_flavor:qa
   desc "Submit a new Build to Testers"
   lane :internal_release do |options|
-    # Get build parameters
-    build_flavor = options.fetch(:build_flavor)
-    build_variant = get_build_variant(build_flavor)
     # Flutter support
     is_flutter = options.fetch(:is_flutter, false)
 
@@ -30,16 +27,16 @@ platform :android do
     if !is_flutter
       gradle(
         task: 'assemble', 
-        build_type: build_flavor.concat("Release")
+        build_type: ENV["BUILD_FLAVOR"].concat("Release")
       )
     end
 
     # Distribute Build
     firebase_app_distribution(
-      app: build_variant.fetch(:firebase_app_id),
+      app: ENV["FIREBASE_APP_ID"],
       release_notes: last_git_commit[:message],
-      apk_path: is_flutter ? get_flutter_apk_path(build_flavor): nil,
-      groups: build_variant.fetch(:distribution_groups)
+      apk_path: is_flutter ? get_flutter_apk_path(ENV["BUILD_FLAVOR"]): nil,
+      groups: build_variant.fetch(ENV["DISTRIBUTION_GROUPS"])
     )
 
   end
@@ -48,9 +45,6 @@ platform :android do
   # fastlane supply init --json_key path/json_key.json --package_name production_app_dentifier
   desc "Deploy a new Production Release version to Google Play"
   lane :playstore_release do |options|
-    # Get build parameters
-    build_flavor = options.fetch(:build_flavor)
-    build_variant = get_build_variant(build_flavor)
     # Flutter support
     is_flutter = options.fetch(:is_flutter, false)
 
@@ -58,19 +52,19 @@ platform :android do
     if !is_flutter
       gradle(
         task: "bundle",
-        build_type: build_flavor.concat("Release")
+        build_type: ENV["BUILD_FLAVOR"].concat("Release")
       )
     end
 
     # Upload Build
     supply(
-      track: CredentialsManager::AppfileConfig.try_fetch_value(:playstore_release_track) || "production",
-      release_status: CredentialsManager::AppfileConfig.try_fetch_value(:playstore_release_status) || "draft",
+      track: "production",
+      release_status: "draft",
       skip_upload_aab: false,
       skip_upload_apk: true,
       apk: nil,
-      aab: is_flutter ? get_flutter_aab_path(build_flavor): nil,
-      package_name: build_variant.fetch(:app_id),
+      aab: is_flutter ? get_flutter_aab_path(ENV["BUILD_FLAVOR"]): nil,
+      package_name: ENV["APP_ID"],
       json_key: options[:json_key],
       skip_upload_metadata: true,
       skip_upload_changelogs: true,
@@ -116,11 +110,6 @@ platform :android do
 end
 
 ## Internal Functions
-# Returns build variant object for the given build flavor
-def get_build_variant build_flavor 
-    build_variants = CredentialsManager::AppfileConfig.try_fetch_value(:build_variants)
-    build_variants.detect { |e| e.fetch(:build_flavor) == build_flavor }
-end
 # Returns APK path for the given build flavor
 def get_flutter_apk_path build_flavor 
     "../build/app/outputs/apk/".concat(build_flavor).concat("/release/app-").concat(build_flavor).concat("-release.apk")
