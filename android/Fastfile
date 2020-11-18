@@ -27,7 +27,7 @@ platform :android do
     if !is_flutter
       gradle(
         task: 'assemble', 
-        build_type: ENV["BUILD_FLAVOR"].concat("Release")
+        build_type: ENV["BUILD_FLAVOR"] + "Release"
       )
     end
 
@@ -52,7 +52,7 @@ platform :android do
     if !is_flutter
       gradle(
         task: "bundle",
-        build_type: ENV["BUILD_FLAVOR"].concat("Release")
+        build_type: ENV["BUILD_FLAVOR"] + "Release"
       )
     end
 
@@ -112,11 +112,11 @@ end
 ## Internal Functions
 # Returns APK path for the given build flavor
 def get_flutter_apk_path build_flavor 
-    "../build/app/outputs/apk/".concat(build_flavor).concat("/release/app-").concat(build_flavor).concat("-release.apk")
+    "../build/app/outputs/apk/" + build_flavor + "/release/app-" + build_flavor + "-release.apk"
 end
 # Returns AAB path for the given build flavor
 def get_flutter_aab_path build_flavor 
-    "../build/app/outputs/bundle/".concat(build_flavor).concat("Release").concat("/app-").concat(build_flavor).concat("-release.aab")
+    "../build/app/outputs/bundle/" + build_flavor + "Release" + "/app-" + build_flavor + "-release.aab"
 end
 
 
