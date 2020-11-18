@@ -1,0 +1,136 @@
+# This file contains the fastlane.tools configuration
+# You can find the documentation at https://docs.fastlane.tools
+#
+# For a list of all available actions, check out
+#
+#     https://docs.fastlane.tools/actions
+#
+# For a list of all available plugins, check out
+#
+#     https://docs.fastlane.tools/plugins/available-plugins
+#
+
+# Uncomment the line if you want fastlane to automatically update itself
+# update_fastlane
+
+platform :android do
+  
+  # Usage Example: fastlane internal_release build_flavor:qa
+  desc "Submit a new Build to Testers"
+  lane :internal_release do |options|
+    # Get build parameters
+    build_flavor = options.fetch(:build_flavor)
+    build_variant = get_build_variant(build_flavor)
+    # Flutter support
+    is_flutter = options.fetch(:is_flutter, false)
+
+    # Build App
+    if !is_flutter
+      gradle(
+        task: 'assemble', 
+        build_type: build_flavor.concat("Release")
+      )
+    end
+
+    # Distribute Build
+    firebase_app_distribution(
+      app: build_variant.fetch(:firebase_app_id),
+      release_notes: last_git_commit[:message],
+      apk_path: is_flutter ? get_flutter_apk_path(build_flavor): nil,
+      groups: build_variant.fetch(:distribution_groups)
+    )
+
+  end
+  
+  # https://docs.fastlane.tools/actions/upload_to_play_store/
+  # fastlane supply init --json_key path/json_key.json --package_name production_app_dentifier
+  desc "Deploy a new Production Release version to Google Play"
+  lane :playstore_release do |options|
+    # Get build parameters
+    build_flavor = options.fetch(:build_flavor)
+    build_variant = get_build_variant(build_flavor)
+    # Flutter support
+    is_flutter = options.fetch(:is_flutter, false)
+
+    # Build App
+    if !is_flutter
+      gradle(
+        task: "bundle",
+        build_type: build_flavor.concat("Release")
+      )
+    end
+
+    # Upload Build
+    supply(
+      track: CredentialsManager::AppfileConfig.try_fetch_value(:playstore_release_track) || "production",
+      release_status: CredentialsManager::AppfileConfig.try_fetch_value(:playstore_release_status) || "draft",
+      skip_upload_aab: false,
+      skip_upload_apk: true,
+      apk: nil,
+      aab: is_flutter ? get_flutter_aab_path(build_flavor): nil,
+      package_name: build_variant.fetch(:app_id),
+      json_key: options[:json_key],
+      skip_upload_metadata: true,
+      skip_upload_changelogs: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+      in_app_update_priority: 0
+    )
+  end
+  
+  # You can define as many lanes as you want
+  
+  desc "Runs all the tests"
+  lane :test do
+    gradle(task: "test")
+  end
+
+  desc "Builds the Release app in Production flavor"
+  lane :build do
+    gradle(
+      task: 'assemble',
+      build_type: 'productionRelease'
+    )
+  end
+  
+  before_all do
+    # ENV["SLACK_URL"] = "https://hooks.slack.com/services/..."
+  end
+  
+  after_all do |lane|
+    # This block is called, only if the executed lane was successful
+    
+    # slack(
+    #   message: "Successfully deployed new App Update."
+    # )
+  end
+  
+  error do |lane, exception|
+    # slack(
+    #   message: exception.message,
+    #   success: false
+    # )
+  end
+end
+
+## Internal Functions
+# Returns build variant object for the given build flavor
+def get_build_variant build_flavor 
+    build_variants = CredentialsManager::AppfileConfig.try_fetch_value(:build_variants)
+    build_variants.detect { |e| e.fetch(:build_flavor) == build_flavor }
+end
+# Returns APK path for the given build flavor
+def get_flutter_apk_path build_flavor 
+    "../build/app/outputs/apk/".concat(build_flavor).concat("/release/app-").concat(build_flavor).concat("-release.apk")
+end
+# Returns AAB path for the given build flavor
+def get_flutter_aab_path build_flavor 
+    "../build/app/outputs/bundle/".concat(build_flavor).concat("Release").concat("/app-").concat(build_flavor).concat("-release.aab")
+end
+
+
+# More information about multiple platforms in fastlane: https://github.com/fastlane/fastlane/blob/master/fastlane/docs/Platforms.md
+# All available actions: https://docs.fastlane.tools/actions
+
+# fastlane reports which actions are used. No personal data is recorded. 
+# Learn more at https://github.com/fastlane/fastlane#metrics
