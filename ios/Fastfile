@@ -39,7 +39,7 @@ platform :ios do
         keychain_password: is_ci ? ci_keychain_password : nil,
         app_identifier: ENV["APP_ID"],
         git_url: ENV["MATCH_GIT_URL"],
-        team_id: ENV["TEAM_ID"]
+        team_id: ENV["DEVELOPER_TEAM_ID"]
       )
   end
 
@@ -86,7 +86,7 @@ platform :ios do
       demo_account_required: true,
       groups: distributionGroups,
       skip_waiting_for_build_processing: options[:is_ci],
-      team_id: ENV["TEAM_ID"]
+      team_id: ENV["APPSTORE_TEAM_ID"]
     )
   end
 
