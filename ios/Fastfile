@@ -77,7 +77,7 @@ platform :ios do
 
   # Publishes a build to Testflight
   private_lane :publish_to_testflight do |options|
-    distributionGroups = ENV["DISTRIBUTION_GROUPS"] != nil ? ENV["DISTRIBUTION_GROUPS"].split(",") : nil;
+    distributionGroups = ENV["DISTRIBUTION_GROUPS"] != nil ? ENV["DISTRIBUTION_GROUPS"].split(",").map(&:strip) : nil;
     pilot(
       app_identifier: ENV["APP_ID"],
       changelog: last_git_commit[:message],
