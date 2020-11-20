@@ -43,7 +43,7 @@ platform :android do
   
   # https://docs.fastlane.tools/actions/upload_to_play_store/
   # fastlane supply init --json_key path/json_key.json --package_name production_app_dentifier
-  desc "Deploy a new Production Release version to Google Play"
+  desc "Deploy a new Release version to Google Play"
   lane :playstore_release do |options|
     # Flutter support
     is_flutter = options.fetch(:is_flutter, false)

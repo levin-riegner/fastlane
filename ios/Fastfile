@@ -1,0 +1,123 @@
+# This file contains the fastlane.tools configuration
+# You can find the documentation at https://docs.fastlane.tools
+#
+# For a list of all available actions, check out
+#
+#     https://docs.fastlane.tools/actions
+#
+# For a list of all available plugins, check out
+#
+#     https://docs.fastlane.tools/plugins/available-plugins
+#
+
+# Uncomment the line if you want fastlane to automatically update itself
+# update_fastlane
+
+default_platform(:ios)
+
+
+# Keychain Values
+ci_keychain_name = "ci_keychain"
+ci_keychain_password = "ci_keychain_password"
+
+platform :ios do
+
+  before_all do
+    cocoapods
+  end
+
+  # Handles Certificates updating
+  private_lane :handle_certificates do |options|
+    if options[:is_ci]
+      create_ci_keychain()
+      match(
+        type: "appstore",
+        readonly: true,
+        keychain_name: ci_keychain_name,
+        keychain_password: ci_keychain_password
+      )
+    else
+      match(type: "appstore")
+    end
+  end
+
+  # Creates Keychain for CI Machine
+  private_lane :create_ci_keychain do |options|
+    # Create Keychain
+    create_keychain(
+      name: ci_keychain_name,
+      password: ci_keychain_password,
+      default_keychain: true,
+      unlock: true,
+      timeout: 3600
+    )
+  end
+
+  # Creates a build file
+  private_lane :build do |options|
+    gym(
+      scheme: ENV["BUILD_SCHEME"],
+      configuration: ENV["BUILD_CONFIGURATION"],
+      silent: false,
+      clean: true,
+      export_method: "app-store",
+      xcargs: {
+        :PROVISIONING_PROFILE_SPECIFIER => "match AppStore #{ENV["APP_IDENTIFIER"]}"
+      },
+      export_options: {
+        compileBitcode: false, 
+        provisioningProfiles: {
+          "#{ENV["APP_IDENTIFIER"]}" => "match AppStore #{ENV["APP_IDENTIFIER"]}"
+        }
+      }
+    )
+  end
+
+  # Publishes a build to Testflight
+  private_lane :publish_to_testflight do |options|
+    distributionGroups = ENV["DISTRIBUTION_GROUPS"] != nil ? ENV["DISTRIBUTION_GROUPS"].split(",") : nil;
+    pilot(
+      app_identifier: ENV["APP_IDENTIFIER"],
+      changelog: last_git_commit[:message],
+      distribute_external: true,
+      notify_external_testers: true,
+      demo_account_required: true,
+      groups: distributionGroups,
+      skip_waiting_for_build_processing: options[:is_ci]
+    )
+  end
+
+  # Uploads dSYMS to Firebase Crashlytics
+  private_lane :upload_dsyms do |options|
+    # Download from Appstore Connect
+    download_dsyms(
+      app_identifier: ENV["APP_IDENTIFIER"],
+      wait_for_dsym_processing: true,
+      wait_timeout: 600,
+      #version: 
+    )
+    # Upload to Crashlytics
+    upload_symbols_to_crashlytics(app_id: ENV["FIREBASE_APP_ID"])
+    # Delete the local dSYM files
+    clean_build_artifacts()
+  end
+
+
+  desc "Submit a new Build to TestFlight"
+  lane :testflight_release do |options|
+    # Support CI runs
+    is_ci = options.fetch(:is_ci, false)
+    handle_certificates(is_ci: is_ci)
+    build()
+    publish_to_testflight(is_ci: is_ci)
+    # upload_dsyms()
+  end
+
+  desc "Uploads all dSYMS to Crashlytics"
+  lane :refresh_dsyms do
+    download_dsyms                  # Download dSYM files from iTC. TODO: Which ones??
+    upload_symbols_to_crashlytics(app_id: ENV["FIREBASE_APP_ID"])   # Upload them to Crashlytics
+    clean_build_artifacts           # Delete the local dSYM files
+  end
+
+end
