@@ -28,17 +28,19 @@ platform :ios do
 
   # Handles Certificates updating
   private_lane :handle_certificates do |options|
+    is_ci = options.fetch(:is_ci, false)
     if options[:is_ci]
       create_ci_keychain()
-      match(
-        type: "appstore",
-        readonly: true,
-        keychain_name: ci_keychain_name,
-        keychain_password: ci_keychain_password
-      )
-    else
-      match(type: "appstore")
     end
+    match(
+        type: "appstore",
+        readonly: is_ci,
+        keychain_name: is_ci ? ci_keychain_name : nil,
+        keychain_password: is_ci ? ci_keychain_password : nil,
+        APP_ID: ENV["APP_ID"],
+        git_url: ENV["MATCH_GIT_URL"],
+        team_id: ENV["TEAM_ID"]
+      )
   end
 
   # Creates Keychain for CI Machine
@@ -62,12 +64,12 @@ platform :ios do
       clean: true,
       export_method: "app-store",
       xcargs: {
-        :PROVISIONING_PROFILE_SPECIFIER => "match AppStore #{ENV["APP_IDENTIFIER"]}"
+        :PROVISIONING_PROFILE_SPECIFIER => "match AppStore #{ENV["APP_ID"]}"
       },
       export_options: {
         compileBitcode: false, 
         provisioningProfiles: {
-          "#{ENV["APP_IDENTIFIER"]}" => "match AppStore #{ENV["APP_IDENTIFIER"]}"
+          "#{ENV["APP_ID"]}" => "match AppStore #{ENV["APP_ID"]}"
         }
       }
     )
@@ -77,13 +79,14 @@ platform :ios do
   private_lane :publish_to_testflight do |options|
     distributionGroups = ENV["DISTRIBUTION_GROUPS"] != nil ? ENV["DISTRIBUTION_GROUPS"].split(",") : nil;
     pilot(
-      app_identifier: ENV["APP_IDENTIFIER"],
+      APP_ID: ENV["APP_ID"],
       changelog: last_git_commit[:message],
       distribute_external: true,
       notify_external_testers: true,
       demo_account_required: true,
       groups: distributionGroups,
-      skip_waiting_for_build_processing: options[:is_ci]
+      skip_waiting_for_build_processing: options[:is_ci],
+      team_id: ENV["TEAM_ID"]
     )
   end
 
@@ -91,7 +94,7 @@ platform :ios do
   private_lane :upload_dsyms do |options|
     # Download from Appstore Connect
     download_dsyms(
-      app_identifier: ENV["APP_IDENTIFIER"],
+      APP_ID: ENV["APP_ID"],
       wait_for_dsym_processing: true,
       wait_timeout: 600,
       #version: 
