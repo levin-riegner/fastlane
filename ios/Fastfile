@@ -13,6 +13,11 @@
 # Uncomment the line if you want fastlane to automatically update itself
 # update_fastlane
 
+# Hotfix while migrating to 2FA account with API access
+# https://github.com/fastlane/fastlane/issues/18098
+# https://github.com/fastlane/fastlane/releases/tag/2.173.0 
+ENV["SPACESHIP_SKIP_2FA_UPGRADE"] = "1"
+
 default_platform(:ios)
 
 
