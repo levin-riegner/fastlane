@@ -16,7 +16,7 @@
 # Hotfix while migrating to 2FA account with API access
 # https://github.com/fastlane/fastlane/issues/18098
 # https://github.com/fastlane/fastlane/releases/tag/2.173.0 
-ENV["SPACESHIP_SKIP_2FA_UPGRADE"] = "1"
+# ENV["SPACESHIP_SKIP_2FA_UPGRADE"] = "1"
 
 default_platform(:ios)
 
@@ -110,20 +110,36 @@ platform :ios do
     clean_build_artifacts()
   end
 
+  # Loads the App Store Connect API token
+  # fastlane setup_appstore_connect_api --appstore_key appstore_key_base64
+  private_lane :setup_appstore_connect_api do |options|
+    app_store_connect_api_key(
+      key_id: ENV["APPSTORE_KEY_ID"],
+      issuer_id: ENV["APPSTORE_KEY_ISSUER_ID"],
+      key_content: options[:appstore_key],
+      is_key_content_base64: true,
+      in_house: false,
+    )
+  end
 
+
+  # PARAM: appstore_key
   desc "Submit a new Build to TestFlight"
   lane :testflight_release do |options|
     # Support CI runs
     is_ci = options.fetch(:is_ci, false)
+    setup_appstore_connect_api(:appstore_key: options[:appstore_key])
     handle_certificates(is_ci: is_ci)
     build()
     publish_to_testflight(is_ci: is_ci)
     # upload_dsyms()
   end
 
+  # PARAM: appstore_key
   desc "Uploads all dSYMS to Crashlytics"
-  lane :refresh_dsyms do
-    download_dsyms                  # Download dSYM files from iTC. TODO: Which ones??
+  lane :refresh_dsyms do |options|
+    setup_appstore_connect_api(:appstore_key: options[:appstore_key])
+    download_dsyms                  # Download dSYM files from iTC
     upload_symbols_to_crashlytics(app_identifier: ENV["FIREBASE_APP_ID"])   # Upload them to Crashlytics
     clean_build_artifacts           # Delete the local dSYM files
   end
