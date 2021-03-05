@@ -128,7 +128,7 @@ platform :ios do
   lane :testflight_release do |options|
     # Support CI runs
     is_ci = options.fetch(:is_ci, false)
-    setup_appstore_connect_api(:appstore_key: options[:appstore_key])
+    setup_appstore_connect_api(appstore_key: options[:appstore_key])
     handle_certificates(is_ci: is_ci)
     build()
     publish_to_testflight(is_ci: is_ci)
