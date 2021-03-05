@@ -138,7 +138,7 @@ platform :ios do
   # PARAM: appstore_key
   desc "Uploads all dSYMS to Crashlytics"
   lane :refresh_dsyms do |options|
-    setup_appstore_connect_api(:appstore_key: options[:appstore_key])
+    setup_appstore_connect_api(appstore_key: options[:appstore_key])
     download_dsyms                  # Download dSYM files from iTC
     upload_symbols_to_crashlytics(app_identifier: ENV["FIREBASE_APP_ID"])   # Upload them to Crashlytics
     clean_build_artifacts           # Delete the local dSYM files
