@@ -140,10 +140,8 @@ platform :ios do
     # upload_dsyms(after_uploaded_date: yesterday.iso8601)
   end
 
-  # PARAM: appstore_key
   desc "Uploads all dSYMS to Crashlytics"
   lane :refresh_dsyms do |options|
-    setup_appstore_connect_api(appstore_key: options[:appstore_key])
     pastMonth = DateTime.now - 30
     upload_dsyms(after_uploaded_date: pastMonth.iso8601)
   end
