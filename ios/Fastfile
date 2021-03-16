@@ -142,7 +142,7 @@ platform :ios do
 
   desc "Uploads all dSYMS to Crashlytics"
   lane :refresh_dsyms do |options|
-    pastMonth = DateTime.now - 30
+    pastMonth = DateTime.now - 90
     upload_dsyms(after_uploaded_date: pastMonth.iso8601)
   end
 
