@@ -97,12 +97,13 @@ platform :ios do
 
   # Uploads dSYMS to Firebase Crashlytics
   private_lane :upload_dsyms do |options|
+    yesterday = DateTime.now - 1
     # Download from Appstore Connect
     download_dsyms(
+      after_uploaded_date: yesterday.iso8601,
       app_identifier: ENV["APP_ID"],
       wait_for_dsym_processing: true,
       wait_timeout: 600,
-      #version: 
     )
     # Upload to Crashlytics
     upload_symbols_to_crashlytics(app_identifier: ENV["FIREBASE_APP_ID"])
@@ -132,16 +133,17 @@ platform :ios do
     handle_certificates(is_ci: is_ci)
     build()
     publish_to_testflight(is_ci: is_ci)
-    # upload_dsyms()
+    upload_dsyms()
   end
 
   # PARAM: appstore_key
   desc "Uploads all dSYMS to Crashlytics"
   lane :refresh_dsyms do |options|
     setup_appstore_connect_api(appstore_key: options[:appstore_key])
-    download_dsyms                  # Download dSYM files from iTC
-    upload_symbols_to_crashlytics(app_identifier: ENV["FIREBASE_APP_ID"])   # Upload them to Crashlytics
-    clean_build_artifacts           # Delete the local dSYM files
+    # download_dsyms                  # Download dSYM files from iTC
+    # upload_symbols_to_crashlytics(app_identifier: ENV["FIREBASE_APP_ID"])   # Upload them to Crashlytics
+    # clean_build_artifacts           # Delete the local dSYM files
+    upload_dsyms()
   end
 
 end
