@@ -28,7 +28,9 @@ ci_keychain_password = "ci_keychain_password"
 platform :ios do
 
   before_all do
-    cocoapods
+    if ENV["USE_SWIFT_PACKAGE_MANAGER"] != true
+      cocoapods
+    end
   end
 
   # Handles Certificates updating
