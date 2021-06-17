@@ -28,7 +28,7 @@ ci_keychain_password = "ci_keychain_password"
 platform :ios do
 
   before_all do
-    if ENV["USE_SWIFT_PACKAGE_MANAGER"] != true
+    if ENV["USE_SWIFT_PACKAGE_MANAGER"] != "true"
       cocoapods
     end
   end
