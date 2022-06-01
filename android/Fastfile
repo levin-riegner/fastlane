@@ -112,7 +112,7 @@ end
 ## Internal Functions
 # Returns APK path for the given build flavor
 def get_flutter_apk_path build_flavor 
-    "../build/app/outputs/apk/" + build_flavor + "/release/app-" + build_flavor + "-release.apk"
+    "../build/app/outputs/flutter-apk/app-" + build_flavor + "-release.apk"
 end
 # Returns AAB path for the given build flavor
 def get_flutter_aab_path build_flavor 
