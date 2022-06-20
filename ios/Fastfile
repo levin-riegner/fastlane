@@ -92,7 +92,7 @@ platform :ios do
       notify_external_testers: true,
       demo_account_required: true,
       groups: distributionGroups,
-      skip_waiting_for_build_processing: options[:is_ci],
+      skip_waiting_for_build_processing: false, # options[:is_ci],
       team_id: ENV["APPSTORE_TEAM_ID"]
     )
   end
@@ -136,16 +136,16 @@ platform :ios do
     handle_certificates(is_ci: is_ci)
     build()
     publish_to_testflight(is_ci: is_ci)
-    # Not possible to get dSYMS using Appstore Connect API yet
-    # https://github.com/fastlane/fastlane/discussions/17485
+    # Ensure you are using fastlane version 2.197.0 and above: https://github.com/fastlane/fastlane/discussions/17485
     # yesterday = DateTime.now - 1
     # upload_dsyms(after_uploaded_date: yesterday.iso8601)
   end
 
   desc "Uploads all dSYMS to Crashlytics"
   lane :refresh_dsyms do |options|
-    pastMonth = DateTime.now - 90
-    upload_dsyms(after_uploaded_date: pastMonth.iso8601)
+    past90Days = DateTime.now - 90
+    setup_appstore_connect_api(appstore_key: options[:appstore_key])
+    upload_dsyms(after_uploaded_date: past90Days.iso8601)
   end
 
 end
