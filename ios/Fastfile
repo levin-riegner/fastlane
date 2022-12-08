@@ -18,6 +18,10 @@
 # https://github.com/fastlane/fastlane/releases/tag/2.173.0 
 # ENV["SPACESHIP_SKIP_2FA_UPGRADE"] = "1"
 
+# Workaround to avoid Pilot error when uploading Testflight build
+# https://github.com/fastlane/fastlane/issues/20741
+ENV['ITMSTRANSPORTER_FORCE_ITMS_PACKAGE_UPLOAD'] = 'true'
+
 default_platform(:ios)
 
 
