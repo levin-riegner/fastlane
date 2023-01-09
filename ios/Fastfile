@@ -20,7 +20,12 @@
 
 # Workaround to avoid Pilot error when uploading Testflight build
 # https://github.com/fastlane/fastlane/issues/20741
-ENV['ITMSTRANSPORTER_FORCE_ITMS_PACKAGE_UPLOAD'] = 'true'
+#
+#
+#
+# UPDATE 1/9/2023 - This line now throws an error
+# https://github.com/fastlane/fastlane/issues/20813
+# ENV['ITMSTRANSPORTER_FORCE_ITMS_PACKAGE_UPLOAD'] = 'true'
 
 default_platform(:ios)
 
