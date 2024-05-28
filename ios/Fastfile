@@ -13,24 +13,9 @@
 # Uncomment the line if you want fastlane to automatically update itself
 # update_fastlane
 
-# Hotfix while migrating to 2FA account with API access
-# https://github.com/fastlane/fastlane/issues/18098
-# https://github.com/fastlane/fastlane/releases/tag/2.173.0 
-# ENV["SPACESHIP_SKIP_2FA_UPGRADE"] = "1"
-
-# Workaround to avoid Pilot error when uploading Testflight build
-# https://github.com/fastlane/fastlane/issues/20741
-#
-#
-#
-# UPDATE 1/9/2023 - This line now throws an error
-# https://github.com/fastlane/fastlane/issues/20813
-# ENV['ITMSTRANSPORTER_FORCE_ITMS_PACKAGE_UPLOAD'] = 'true'
-
 default_platform(:ios)
 
-
-# Keychain Values
+# CI Keychain Values
 ci_keychain_name = "ci_keychain"
 ci_keychain_password = "ci_keychain_password"
 
@@ -50,7 +35,7 @@ platform :ios do
     end
     match(
         type: "appstore",
-        readonly: is_ci,
+        readonly: true,
         keychain_name: is_ci ? ci_keychain_name : nil,
         keychain_password: is_ci ? ci_keychain_password : nil,
         app_identifier: ENV["APP_ID"],
@@ -127,32 +112,42 @@ platform :ios do
 
   # Loads the App Store Connect API token
   # fastlane setup_appstore_connect_api --appstore_key appstore_key_base64
+  # OR
+  # fastlane setup_appstore_connect_api --key_filepath path_to_key_file.p8
   private_lane :setup_appstore_connect_api do |options|
-    app_store_connect_api_key(
-      key_id: ENV["APPSTORE_KEY_ID"],
-      issuer_id: ENV["APPSTORE_KEY_ISSUER_ID"],
-      key_content: options[:appstore_key],
-      is_key_content_base64: true,
-      in_house: false,
-    )
+    key_content = options[:appstore_key]
+    key_filepath = options[:key_filepath]
+    if key_filepath != nil
+      app_store_connect_api_key(
+        key_id: ENV["APPSTORE_KEY_ID"],
+        issuer_id: ENV["APPSTORE_KEY_ISSUER_ID"],
+        key_filepath: key_filepath,
+        in_house: false,
+      )
+    else
+      app_store_connect_api_key(
+        key_id: ENV["APPSTORE_KEY_ID"],
+        issuer_id: ENV["APPSTORE_KEY_ISSUER_ID"],
+        key_content: key_content,
+        is_key_content_base64: true,
+        in_house: false,
+      )
+    end
+    
   end
 
 
   # PARAM: appstore_key
   desc "Submit a new Build to TestFlight"
   lane :testflight_release do |options|
-    # Support ci & dry_run options
     is_ci = options.fetch(:is_ci, false)
     dry_run = options.fetch(:dry_run, false)
-    setup_appstore_connect_api(appstore_key: options[:appstore_key])
+    setup_appstore_connect_api(appstore_key: options[:appstore_key], key_filepath: options[:key_filepath])
     handle_certificates(is_ci: is_ci)
     build(dry_run: dry_run)
     if !dry_run
       publish_to_testflight(is_ci: is_ci)
     end
-    # Ensure you are using fastlane version 2.197.0 and above: https://github.com/fastlane/fastlane/discussions/17485
-    # yesterday = DateTime.now - 1
-    # upload_dsyms(after_uploaded_date: yesterday.iso8601)
   end
 
   desc "Uploads all dSYMS to Crashlytics"
