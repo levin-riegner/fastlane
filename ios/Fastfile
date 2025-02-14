@@ -42,6 +42,15 @@ platform :ios do
         git_url: ENV["MATCH_GIT_URL"],
         team_id: ENV["DEVELOPER_TEAM_ID"]
       )
+    match(
+        type: "appstore",
+        readonly: true,
+        keychain_name: is_ci ? ci_keychain_name : nil,
+        keychain_password: is_ci ? ci_keychain_password : nil,
+        app_identifier: ENV["WIDGET_EXTENSION_ID"],
+        git_url: ENV["MATCH_GIT_URL"],
+        team_id: ENV["DEVELOPER_TEAM_ID"]
+    )
   end
 
   # Creates Keychain for CI Machine
