@@ -52,6 +52,7 @@ platform :ios do
           git_url: ENV["MATCH_GIT_URL"],
           team_id: ENV["DEVELOPER_TEAM_ID"]
       )
+    end
   end
 
   # Creates Keychain for CI Machine
